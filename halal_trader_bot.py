@@ -1,5 +1,5 @@
-
 import time
+import os
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
@@ -10,7 +10,7 @@ def stop(update: Update, context: CallbackContext):
     update.message.reply_text("🛑 Бот остановлен.")
 
 def main():
-    updater = Updater("PASTE_YOUR_TELEGRAM_BOT_TOKEN_HERE", use_context=True)
+    updater = Updater(os.environ.get("TELEGRAM_BOT_TOKEN"), use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("stop", stop))
@@ -19,3 +19,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print("Preparing deploy with Python 3.11.6")
