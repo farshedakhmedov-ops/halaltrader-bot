@@ -1,30 +1,24 @@
-import os
-import logging
-from telegram.ext import Updater, CommandHandler, CallbackContext
-from telegram import Update
+from telegram import Bot, Update
+from telegram.ext import Updater, CommandHandler, CallbackContext, Dispatcher
+from flask import Flask, request
+import threading
 from pybit.unified_trading import HTTP
+import os
 
-# Логирование
-logging.basicConfig(level=logging.INFO)
+# === Настройки ===
+TELEGRAM_BOT_TOKEN = "ТВОЙ_ТОКЕН_ОТСЮДА"
+BYBIT_API_KEY = "ТВОЙ_КЛЮЧ"
+BYBIT_API_SECRET = "ТВОЙ_СЕКРЕТ"
 
-# Получаем токены из переменных среды
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-BYBIT_API_KEY = os.environ.get("BYBIT_API_KEY")
-BYBIT_API_SECRET = os.environ.get("BYBIT_API_SECRET")
+app = Flask(__name__)
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
+dispatcher = Dispatcher(bot, None, workers=0, use_context=True)
 
-# Подключение к Bybit (UNIFIED аккаунт)
-session = HTTP(
-    api_key=BYBIT_API_KEY,
-    api_secret=BYBIT_API_SECRET,
-)
+session = HTTP(api_key=BYBIT_API_KEY, api_secret=BYBIT_API_SECRET)
 
 # Команда /start
 def start(update: Update, context: CallbackContext):
     update.message.reply_text("🚀 Халал-трейдер запущен!")
-
-# Команда /stop
-def stop(update: Update, context: CallbackContext):
-    update.message.reply_text("⛔️ Бот остановлен.")
 
 # Команда /balance
 def balance(update: Update, context: CallbackContext):
@@ -35,17 +29,25 @@ def balance(update: Update, context: CallbackContext):
     except Exception as e:
         update.message.reply_text(f"❌ Ошибка получения баланса:\n{e}")
 
-# Главная функция
-def main():
-    updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("balance", balance))
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("stop", stop))
-    dp.add_handler(CommandHandler("balance", balance))
+# Webhook endpoint
+@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "ok"
 
-    updater.start_polling()
-    updater.idle()
+# Запуск Flask-сервера
+def run():
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
 
-if __name__ == '__main__':
-    main()
+# Установка Webhook
+def set_webhook():
+    url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/{TELEGRAM_BOT_TOKEN}"
+    bot.set_webhook(url)
+
+if __name__ == "__main__":
+    threading.Thread(target=run).start()
+    set_webhook()
