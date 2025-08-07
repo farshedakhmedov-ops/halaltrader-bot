@@ -59,7 +59,9 @@ def webhook():
 WEBHOOK_URL = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"
 
 def set_webhook():
-    url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/{os.environ['TELEGRAM_BOT_TOKEN']}"
+    token = os.environ['TELEGRAM_BOT_TOKEN']
+    host = os.environ['RENDER_EXTERNAL_HOSTNAME']
+    url = f"https://{host}/webhook"
     bot.set_webhook(url=url)
 
 # Корневой маршрут
