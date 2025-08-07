@@ -58,9 +58,9 @@ def webhook():
 # Установка webhook при запуске
 WEBHOOK_URL = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"
 
-@app.before_first_request
 def set_webhook():
-    bot.set_webhook(url=WEBHOOK_URL)
+    url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/{TELEGRAM_BOT_TOKEN}"
+    bot.set_webhook(url=url)
 
 # Корневой маршрут
 @app.route('/')
@@ -69,4 +69,5 @@ def home():
 
 # Запуск сервера
 if __name__ == "__main__":
+    set_webhook()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
