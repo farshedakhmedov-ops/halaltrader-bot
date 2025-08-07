@@ -6,9 +6,9 @@ from pybit.unified_trading import HTTP
 import os
 
 # === Настройки ===
-TELEGRAM_BOT_TOKEN = "ТВОЙ_ТОКЕН_ОТСЮДА"
-BYBIT_API_KEY = "ТВОЙ_КЛЮЧ"
-BYBIT_API_SECRET = "ТВОЙ_СЕКРЕТ"
+TELEGRAM_BOT_TOKEN = "8218238899:AAGs5gZWMJFDEaLlTNgZG_m-EMSNx0eh3T4"
+BYBIT_API_KEY = "cm5EBNWS1ykAH2scMg"
+BYBIT_API_SECRET = "OCxoLWKBbcKXuTJfwBnMmtq4tcwNkQVtYkkC"
 
 app = Flask(__name__)
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
