@@ -5,4 +5,4 @@ WORKDIR /app
 COPY . . 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "halaltrader_bot.py"]
+CMD ["python", "halal_trader_bot.py"]
