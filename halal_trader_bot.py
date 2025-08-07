@@ -56,6 +56,8 @@ def webhook():
     return "ok"
 
 # Установка webhook при запуске
+WEBHOOK_URL = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"
+
 @app.before_first_request
 def set_webhook():
     bot.set_webhook(url=WEBHOOK_URL)
