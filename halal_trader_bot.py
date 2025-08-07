@@ -1,53 +1,70 @@
-from telegram import Bot, Update
-from telegram.ext import Updater, CommandHandler, CallbackContext, Dispatcher
 from flask import Flask, request
-import threading
+from telegram import Bot, Update
+from telegram.ext import Dispatcher, CommandHandler
 from pybit.unified_trading import HTTP
 import os
 
-# === Настройки ===
-TELEGRAM_BOT_TOKEN = "8218238899:AAGs5gZWMJFDEaLlTNgZG_m-EMSNx0eh3T4"
-BYBIT_API_KEY = "cm5EBNWS1ykAH2scMg"
-BYBIT_API_SECRET = "OCxoLWKBbcKXuTJfwBnMmtq4tcwNkQVtYkkC"
+# Настройки окружения
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+BYBIT_API_KEY = os.getenv("BYBIT_API_KEY")
+BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Пример: https://yourapp.onrender.com/webhook
 
+# Инициализация Telegram-бота
+bot = Bot(token=TOKEN)
 app = Flask(__name__)
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
-dispatcher = Dispatcher(bot, None, workers=0, use_context=True)
+dispatcher = Dispatcher(bot, None, workers=0)
 
-session = HTTP(api_key=BYBIT_API_KEY, api_secret=BYBIT_API_SECRET)
+# Авторизация Bybit
+session = HTTP(
+    testnet=False,
+    api_key=BYBIT_API_KEY,
+    api_secret=BYBIT_API_SECRET
+)
 
-# Команда /start
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("🚀 Халал-трейдер запущен!")
+is_trading = False  # глобальный флаг
 
-# Команда /balance
-def balance(update: Update, context: CallbackContext):
-    try:
-        result = session.get_wallet_balance(accountType="UNIFIED")
-        usdt_balance = result["result"]["list"][0]["totalWalletBalance"]
-        update.message.reply_text(f"💰 Баланс: {usdt_balance} USDT")
-    except Exception as e:
-        update.message.reply_text(f"❌ Ошибка получения баланса:\n{e}")
+def start(update, context):
+    global is_trading
+    is_trading = True
+    update.message.reply_text("🚀 Автотрейдинг запущен!")
+    # Здесь начнется торговля — пока пример
+    # Можно вставить свою стратегию
+    # Например: open_trades()
 
+def stop(update, context):
+    global is_trading
+    is_trading = False
+    update.message.reply_text("🛑 Автотрейдинг остановлен!")
+
+def balance(update, context):
+    wallet_balance = session.get_wallet_balance(accountType="UNIFIED")
+    usdt = wallet_balance["result"]["list"][0]["coin"][0]["walletBalance"]
+    update.message.reply_text(f"💰 Баланс: {usdt} USDT")
+
+# Обработчики команд
 dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("stop", stop))
 dispatcher.add_handler(CommandHandler("balance", balance))
 
 # Webhook endpoint
-@app.route(f"/{TELEGRAM_BOT_TOKEN}", methods=["POST"])
+@app.route('/webhook', methods=['POST'])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
+    if request.method == "POST":
+        update = Update.de_json(request.get_json(force=True), bot)
+        dispatcher.process_update(update)
     return "ok"
 
-# Запуск Flask-сервера
-def run():
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-# Установка Webhook
+# Установка webhook при запуске
+@app.before_first_request
 def set_webhook():
-    url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/{TELEGRAM_BOT_TOKEN}"
-    bot.set_webhook(url)
+    bot.set_webhook(url=WEBHOOK_URL)
 
+# Корневой маршрут
+@app.route('/')
+def home():
+    return "👋 Бот работает через Webhook!"
+
+# Запуск сервера
 if __name__ == "__main__":
-    threading.Thread(target=run).start()
-    set_webhook()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
