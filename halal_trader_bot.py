@@ -48,7 +48,8 @@ dispatcher.add_handler(CommandHandler("stop", stop))
 dispatcher.add_handler(CommandHandler("balance", balance))
 
 # Webhook endpoint
-@app.route(f"/{os.environ['TELEGRAM_BOT_TOKEN']}", methods=["POST"])
+# Webhook endpoint
+@app.route('/webhook', methods=['POST'])
 def webhook():
     if request.method == "POST":
         update = Update.de_json(request.get_json(force=True), bot)
@@ -56,12 +57,10 @@ def webhook():
     return "ok"
 
 # Установка webhook при запуске
-WEBHOOK_URL = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"
-
 def set_webhook():
     token = os.environ['TELEGRAM_BOT_TOKEN']
     host = os.environ['RENDER_EXTERNAL_HOSTNAME']
-    url = f"https://{host}/{token}"
+    url = f"https://{host}/webhook"
     bot.set_webhook(url=url)
 
 # Корневой маршрут
